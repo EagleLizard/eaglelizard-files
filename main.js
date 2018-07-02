@@ -22,6 +22,11 @@ function main(){
       Key: req.params.image
     }).createReadStream();
 
+    imageStream.on('error', err=>{
+      if(err.code === 'NoSuchKey'){
+        console.error(`${err.message}: ${req.params.image}`);
+      }
+    })
     imageStream.pipe(res);
   });
 
