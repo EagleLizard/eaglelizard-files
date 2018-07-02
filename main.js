@@ -15,16 +15,18 @@ function main(){
     accessKeyId: process.env.aws_access_key_id,
     secretAccessKey: process.env.aws_secret_access_key,
   });
-  app.get('/:image', (req, res)=>{
-    let imageStream;
+  app.get('/:folder/:image?', (req, res)=>{
+    let imageStream, imageKey, folderKey;
+    imageKey = req.params.image || req.params.folder;
+    folderKey = req.params.image ? `/${req.params.folder}` : '';
     imageStream = s3.getObject({
-      Bucket: 'elasticbeanstalk-us-west-1-297608881144',
-      Key: req.params.image
+      Bucket: 'elasticbeanstalk-us-west-1-297608881144'+folderKey,
+      Key: imageKey
     }).createReadStream();
 
     imageStream.on('error', err=>{
       if(err.code === 'NoSuchKey'){
-        console.error(`${err.message}: ${req.params.image}`);
+        console.error(`${err.message}: ${imageKey}`);
       }else{
         console.error(err);
       }
