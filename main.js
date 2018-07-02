@@ -25,6 +25,8 @@ function main(){
     imageStream.on('error', err=>{
       if(err.code === 'NoSuchKey'){
         console.error(`${err.message}: ${req.params.image}`);
+      }else{
+        console.error(err);
       }
     })
     imageStream.pipe(res);
