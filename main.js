@@ -1,10 +1,14 @@
 
 const express = require('express');
 const AWS = require('aws-sdk');
+const sharp = require('sharp');
+
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
+
+const jpgRx = /\.jpg$/;
 
 main();
 
@@ -16,7 +20,8 @@ function main(){
     secretAccessKey: process.env.aws_secret_access_key,
   });
   app.get('/:folder/:image?', (req, res)=>{
-    let imageStream, imageKey, folderKey;
+    let imageStream, imageKey, folderKey, transformer;
+    
     imageKey = req.params.image || req.params.folder;
     folderKey = req.params.image ? `/${req.params.folder}` : '';
     imageStream = s3.getObject({
@@ -31,7 +36,25 @@ function main(){
         console.error(err);
       }
     })
+
+    if(req.query.width && !isNaN(+req.query.width)){
+      transformer = sharp().resize(+req.query.width);
+
+      if(jpgRx.test(imageKey)){
+        transformer.jpeg({
+          quality: 100
+        });
+      }
+
+      transformer.on('error', err=>{
+        console.error(err);
+      });
+
+      imageStream = imageStream.pipe(transformer);
+    }
+
     imageStream.pipe(res);
+    res.setHeader('Access-Control-Allow-Origin', '*');
   });
 
   app.listen(PORT, ()=>{
