@@ -8,6 +8,7 @@ import stream from 'stream';
 
 import MemCache from './mem-cache';
 import CacheFile from './cache-file';
+import MemLogger from './mem-logger';
 
 dotenv.config();
 
@@ -19,7 +20,9 @@ const jpgRx = /\.jpg$/;
 main();
 
 function main(){
-  let s3: AWS.S3, cache: MemCache;
+  let s3: AWS.S3, cache: MemCache, memLogger: MemLogger;
+
+  memLogger = new MemLogger();
 
   cache = new MemCache();
 

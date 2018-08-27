@@ -16,13 +16,15 @@ const sharp_1 = __importDefault(require("sharp"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const stream_1 = __importDefault(require("stream"));
 const mem_cache_1 = __importDefault(require("./mem-cache"));
+const mem_logger_1 = __importDefault(require("./mem-logger"));
 dotenv_1.default.config();
 const app = express_1.default();
 const PORT = process.env.PORT || 8080;
 const jpgRx = /\.jpg$/;
 main();
 function main() {
-    let s3, cache;
+    let s3, cache, memLogger;
+    memLogger = new mem_logger_1.default();
     cache = new mem_cache_1.default();
     s3 = new AWS.S3({
         region: 'us-west-1',
