@@ -14,7 +14,7 @@ const express_1 = __importDefault(require("express"));
 const AWS = __importStar(require("aws-sdk"));
 const sharp_1 = __importDefault(require("sharp"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const memory_streams_1 = __importDefault(require("memory-streams"));
+const stream_1 = __importDefault(require("stream"));
 const mem_cache_1 = __importDefault(require("./mem-cache"));
 dotenv_1.default.config();
 const app = express_1.default();
@@ -30,21 +30,32 @@ function main() {
         secretAccessKey: process.env.aws_secret_access_key,
     });
     app.get('/:folder/:image?', (req, res) => {
-        let imageKey, folderKey, transformer, memoryWriter, width;
+        let imageKey, folderKey, transformer, imageData, width, cacheStream, s3Request, imageStream, contentType, cacheFile;
         width = req.query.width;
         imageKey = req.params.image || req.params.folder;
         folderKey = req.params.image ? `/${req.params.folder}` : '';
         //consult image cache first
         if (cache.has(imageKey, width)) {
-            res.type('png');
-            res.write(new Buffer(cache.get(imageKey, width), 'binary'), 'binary');
-            res.end(undefined, 'binary');
+            console.log('Pulling from cache');
+            // res.type('png');
+            // res.write(new Buffer(<string>cache.get(imageKey, width), 'binary'), 'binary');
+            // res.end(undefined, 'binary');
+            cacheFile = cache.get(imageKey, width);
+            res.contentType(cacheFile.contentType);
+            res.send(new Buffer(cacheFile.data, 'binary'));
             return;
         }
-        let imageStream = s3.getObject({
+        else {
+            console.log('Pulling from s3');
+        }
+        s3Request = s3.getObject({
             Bucket: 'elasticbeanstalk-us-west-1-297608881144' + folderKey,
             Key: imageKey
-        }).createReadStream();
+        });
+        s3Request.on('httpHeaders', (status, headers) => {
+            contentType = headers['content-type'];
+        });
+        imageStream = s3Request.createReadStream();
         imageStream.on('error', err => {
             if (err.message === 'NoSuchKey') {
                 console.error(`${err.message}: ${imageKey}`);
@@ -65,18 +76,18 @@ function main() {
             });
             imageStream = imageStream.pipe(transformer);
         }
-        memoryWriter = new memory_streams_1.default.WritableStream();
-        // imageStream.pipe(memoryWriter);
-        let imageData = '';
-        imageStream.setEncoding('binary');
-        imageStream.on('data', (chunk) => {
+        // save data for caching
+        imageData = '';
+        cacheStream = imageStream.pipe(new stream_1.default.PassThrough());
+        cacheStream.setEncoding('binary');
+        // imageStream.setEncoding('binary');
+        cacheStream.on('data', (chunk) => {
             imageData += chunk;
         });
-        imageStream.on('end', () => {
-            console.log('memoryWriterFinish');
-            cache.set(imageData, imageKey, width);
+        cacheStream.on('end', () => {
+            console.log('banana');
+            cache.set(imageData, contentType, imageKey, width);
         });
-        res.type('png');
         imageStream.pipe(res);
         res.setHeader('Access-Control-Allow-Origin', '*');
     });

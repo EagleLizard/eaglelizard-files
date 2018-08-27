@@ -3,11 +3,11 @@ import express from 'express';
 import * as AWS from 'aws-sdk';
 import sharp from 'sharp';
 import dotenv from 'dotenv';
-import streams from 'memory-streams';
 import fs from 'fs';
+import stream from 'stream';
 
 import MemCache from './mem-cache';
-import { WriteStream, fstat } from 'fs';
+import CacheFile from './cache-file';
 
 dotenv.config();
 
@@ -31,24 +31,37 @@ function main(){
   });
 
   app.get('/:folder/:image?', (req, res)=>{
-    let imageKey:string, folderKey, transformer,
-    memoryWriter: streams.WritableStream, width: string;
+    let imageKey:string, folderKey, transformer, imageData: string,
+      width: string, cacheStream, s3Request, imageStream, contentType: string,
+      cacheFile: CacheFile;
 
     width = req.query.width;
     imageKey = req.params.image || req.params.folder;
     folderKey = req.params.image ? `/${req.params.folder}` : '';
     //consult image cache first
     if(cache.has(imageKey, width)){
-      res.type('png');
-      res.write(new Buffer(<string>cache.get(imageKey, width), 'binary'), 'binary');
-      res.end(undefined, 'binary');
+      console.log('Pulling from cache');
+      // res.type('png');
+      // res.write(new Buffer(<string>cache.get(imageKey, width), 'binary'), 'binary');
+      // res.end(undefined, 'binary');
+      cacheFile = <CacheFile>cache.get(imageKey, width);
+      res.contentType(cacheFile.contentType);
+      res.send(new Buffer(cacheFile.data, 'binary'))
       return;
+    }else{
+      console.log('Pulling from s3');
     }
-  
-    let imageStream = s3.getObject({
+
+    s3Request = s3.getObject({
       Bucket: 'elasticbeanstalk-us-west-1-297608881144'+folderKey,
       Key: imageKey
-    }).createReadStream();
+    });
+
+    s3Request.on('httpHeaders', (status, headers)=>{
+      contentType = headers['content-type'];
+    });
+
+    imageStream = s3Request.createReadStream();
 
     imageStream.on('error', err=>{
       if(err.message === 'NoSuchKey'){
@@ -74,21 +87,21 @@ function main(){
       imageStream = imageStream.pipe(transformer);
     }
 
-    
-    memoryWriter = new streams.WritableStream();
-    // imageStream.pipe(memoryWriter);
+    // save data for caching
+    imageData = '';
+    cacheStream = imageStream.pipe(new stream.PassThrough());
+    cacheStream.setEncoding('binary');
 
-    let imageData = '';
-    imageStream.setEncoding('binary');
-    imageStream.on('data', (chunk)=>{
+    // imageStream.setEncoding('binary');
+    cacheStream.on('data', (chunk)=>{
       imageData += chunk;
     });
 
-    imageStream.on('end', ()=>{
-      console.log('memoryWriterFinish');
-      cache.set(imageData, imageKey, width);
+    cacheStream.on('end', ()=>{
+      console.log('banana');
+      cache.set(imageData, contentType, imageKey, width);
     });
-    res.type('png');
+
     imageStream.pipe(res);
     res.setHeader('Access-Control-Allow-Origin', '*');
   });

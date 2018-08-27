@@ -1,5 +1,9 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+const cache_file_1 = __importDefault(require("./cache-file"));
 class MemCache {
     constructor() {
         this.cacheMap = new Map();
@@ -12,11 +16,11 @@ class MemCache {
     has(imageKey, width) {
         return this.cacheMap.has(this.getKey(imageKey, width));
     }
-    set(imageData, imageKey, width) {
+    set(imageData, contentType, imageKey, width) {
         let key;
         key = this.getKey(imageKey, width);
         if (!this.has(imageKey, width)) {
-            this.cacheMap.set(key, imageData);
+            this.cacheMap.set(key, new cache_file_1.default(imageData, contentType));
         }
     }
     getKey(imageKey, width) {
