@@ -1,6 +1,12 @@
 
+const INTERVAL = 6e4;
+
 export default class MemLogger {
   constructor(){
+    // this.logHeap();
+  }
+
+  run(){
     this.logHeap();
   }
 
@@ -10,6 +16,6 @@ export default class MemLogger {
     console.log(`Used Memory: ${used.toFixed(2)} MB`);
     setTimeout(()=>{
       this.logHeap();
-    }, 2000);
+    }, INTERVAL);
   }
 }

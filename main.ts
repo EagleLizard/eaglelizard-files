@@ -23,6 +23,7 @@ function main(){
   let s3: AWS.S3, cache: MemCache, memLogger: MemLogger;
 
   memLogger = new MemLogger();
+  memLogger.run();
 
   cache = new MemCache();
 
@@ -43,10 +44,7 @@ function main(){
     folderKey = req.params.image ? `/${req.params.folder}` : '';
     //consult image cache first
     if(cache.has(imageKey, width)){
-      console.log('Pulling from cache');
-      // res.type('png');
-      // res.write(new Buffer(<string>cache.get(imageKey, width), 'binary'), 'binary');
-      // res.end(undefined, 'binary');
+      console.log('Pulling from memory');
       cacheFile = <CacheFile>cache.get(imageKey, width);
       res.contentType(cacheFile.contentType);
       res.send(new Buffer(cacheFile.data, 'binary'))
@@ -101,7 +99,6 @@ function main(){
     });
 
     cacheStream.on('end', ()=>{
-      console.log('banana');
       cache.set(imageData, contentType, imageKey, width);
     });
 

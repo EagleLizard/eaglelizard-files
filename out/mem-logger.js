@@ -1,7 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const INTERVAL = 6e4;
 class MemLogger {
     constructor() {
+        // this.logHeap();
+    }
+    run() {
         this.logHeap();
     }
     logHeap() {
@@ -10,7 +14,7 @@ class MemLogger {
         console.log(`Used Memory: ${used.toFixed(2)} MB`);
         setTimeout(() => {
             this.logHeap();
-        }, 2000);
+        }, INTERVAL);
     }
 }
 exports.default = MemLogger;

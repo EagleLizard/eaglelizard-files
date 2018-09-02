@@ -25,6 +25,7 @@ main();
 function main() {
     let s3, cache, memLogger;
     memLogger = new mem_logger_1.default();
+    memLogger.run();
     cache = new mem_cache_1.default();
     s3 = new AWS.S3({
         region: 'us-west-1',
@@ -38,10 +39,7 @@ function main() {
         folderKey = req.params.image ? `/${req.params.folder}` : '';
         //consult image cache first
         if (cache.has(imageKey, width)) {
-            console.log('Pulling from cache');
-            // res.type('png');
-            // res.write(new Buffer(<string>cache.get(imageKey, width), 'binary'), 'binary');
-            // res.end(undefined, 'binary');
+            console.log('Pulling from memory');
             cacheFile = cache.get(imageKey, width);
             res.contentType(cacheFile.contentType);
             res.send(new Buffer(cacheFile.data, 'binary'));
@@ -87,7 +85,6 @@ function main() {
             imageData += chunk;
         });
         cacheStream.on('end', () => {
-            console.log('banana');
             cache.set(imageData, contentType, imageKey, width);
         });
         imageStream.pipe(res);
