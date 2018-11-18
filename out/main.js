@@ -35,14 +35,15 @@ function main() {
     app.get('/:folder/:image?', (req, res) => {
         let imageKey, folderKey, transformer, imageData, width, cacheStream, s3Request, imageStream, contentType, cacheFile;
         width = req.query.width;
+        console.log(width);
         imageKey = req.params.image || req.params.folder;
         folderKey = req.params.image ? `/${req.params.folder}` : '';
         //consult image cache first
-        if (cache.has(imageKey, width)) {
+        if (width !== undefined && cache.has(imageKey, width)) {
             console.log('Pulling from memory');
             cacheFile = cache.get(imageKey, width);
             res.contentType(cacheFile.contentType);
-            res.send(new Buffer(cacheFile.data, 'binary'));
+            res.send(Buffer.from(cacheFile.data, 'binary'));
             return;
         }
         else {

@@ -1,1 +1,1 @@
-web: npm i && node out/main.js
+web: node out/main.js
