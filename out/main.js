@@ -21,6 +21,7 @@ dotenv_1.default.config();
 const app = express_1.default();
 const PORT = process.env.PORT || 8080;
 const jpgRx = /\.jpg$/;
+const textRx = /\.txt$/;
 main();
 function main() {
     let s3, cache, memLogger;
@@ -39,7 +40,14 @@ function main() {
         imageKey = req.params.image || req.params.folder;
         folderKey = req.params.image ? `/${req.params.folder}` : '';
         //consult image cache first
-        if (width !== undefined && cache.has(imageKey, width)) {
+        if (textRx.test(imageKey) && cache.has(imageKey)) {
+            console.log('Pulling from memory');
+            cacheFile = cache.get(imageKey);
+            res.contentType(cacheFile.contentType);
+            res.send(Buffer.from(cacheFile.data, 'binary'));
+            return;
+        }
+        else if (width !== undefined && cache.has(imageKey, width)) {
             console.log('Pulling from memory');
             cacheFile = cache.get(imageKey, width);
             res.contentType(cacheFile.contentType);
@@ -62,7 +70,7 @@ function main() {
                 console.error(`${err.message}: ${imageKey}`);
             }
             else {
-                // console.error(err);
+                console.error(err);
             }
         });
         if (width && !isNaN(+width)) {
