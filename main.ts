@@ -16,6 +16,7 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 
 const jpgRx = /\.jpg$/;
+const textRx = /\.txt$/;
 
 main();
 
@@ -44,7 +45,13 @@ function main(){
     imageKey = req.params.image || req.params.folder;
     folderKey = req.params.image ? `/${req.params.folder}` : '';
     //consult image cache first
-    if(width !== undefined && cache.has(imageKey, width)){
+    if(textRx.test(imageKey) && cache.has(imageKey)) {
+      console.log('Pulling from memory');
+      cacheFile = <CacheFile>cache.get(imageKey);
+      res.contentType(cacheFile.contentType);
+      res.send(Buffer.from(cacheFile.data, 'binary'))
+      return;
+    }else if(width !== undefined && cache.has(imageKey, width)){
       console.log('Pulling from memory');
       cacheFile = <CacheFile>cache.get(imageKey, width);
       res.contentType(cacheFile.contentType);
@@ -69,7 +76,7 @@ function main(){
       if(err.message === 'NoSuchKey'){
         console.error(`${err.message}: ${imageKey}`);
       }else{
-        // console.error(err);
+        console.error(err);
       }
     })
 
