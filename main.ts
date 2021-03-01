@@ -35,11 +35,11 @@ function main(){
   });
 
   app.get('/:folder/:image?', (req, res)=>{
-    let imageKey:string, folderKey, transformer, imageData: string,
+    let imageKey:string, folderKey, transformer: sharp.Sharp, imageData: string,
       width: string, cacheStream, s3Request, imageStream, contentType: string,
       cacheFile: CacheFile;
 
-    width = req.query.width;
+    width = (req.query.width as string);
     console.log(width);
     imageKey = req.params.image || req.params.folder;
     folderKey = req.params.image ? `/${req.params.folder}` : '';
@@ -74,7 +74,12 @@ function main(){
     })
 
     if(width && !isNaN(+width)){
-      transformer = sharp().resize(+width);
+      transformer = sharp().resize({
+        width: +width,
+        withoutEnlargement: true,
+        fit: sharp.fit.inside,
+      });
+      
 
       if(jpgRx.test(imageKey)){
         transformer.jpeg({
