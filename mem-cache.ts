@@ -1,10 +1,10 @@
-import CacheFile from "./cache-file";
+import CacheFile from './cache-file';
 
 export default class MemCache {
 
   cacheMap: Map<string, CacheFile>;
 
-  constructor(){
+  constructor() {
     this.cacheMap = new Map();
   }
 
@@ -14,19 +14,19 @@ export default class MemCache {
     return this.cacheMap.get(key);
   }
 
-  has(imageKey: string, width?: string): boolean{
+  has(imageKey: string, width?: string): boolean {
     return this.cacheMap.has(this.getKey(imageKey, width));
   }
 
-  set(imageData: string, contentType: string, imageKey: string, width?: string){
+  set(imageData: string, contentType: string, imageKey: string, width?: string) {
     let key:string;
     key = this.getKey(imageKey, width);
-    if(!this.has(imageKey, width)){
+    if(!this.has(imageKey, width)) {
       this.cacheMap.set(key, new CacheFile(imageData, contentType));
     }
   }
 
-  private getKey(imageKey: string, width?: string){
+  private getKey(imageKey: string, width?: string) {
     return `${imageKey}:${width || ''}`;
   }
 }

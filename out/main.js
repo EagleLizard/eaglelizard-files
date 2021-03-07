@@ -1,114 +1,43 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
 };
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const AWS = __importStar(require("aws-sdk"));
-const sharp_1 = __importDefault(require("sharp"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const stream_1 = __importDefault(require("stream"));
-const mem_cache_1 = __importDefault(require("./mem-cache"));
-const mem_logger_1 = __importDefault(require("./mem-logger"));
 dotenv_1.default.config();
-const app = express_1.default();
+const mem_logger_1 = __importDefault(require("./mem-logger"));
+const routes_1 = require("./src/routes");
+const image_transform_service_1 = require("./src/services/image-transform/image-transform-service");
 const PORT = process.env.PORT || 8080;
-const jpgRx = /\.jpg$/;
-main();
+(() => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield main();
+    }
+    catch (e) {
+        console.error(e);
+    }
+}))();
 function main() {
-    let s3, cache, memLogger;
-    memLogger = new mem_logger_1.default();
-    memLogger.run();
-    cache = new mem_cache_1.default();
-    s3 = new AWS.S3({
-        region: 'us-west-1',
-        accessKeyId: process.env.aws_access_key_id,
-        secretAccessKey: process.env.aws_secret_access_key,
-    });
-    app.get('/:folder/:image?', (req, res) => {
-        let imageKey, folderKey, transformer, imageData, width, cacheStream, s3Request, imageStream, contentType, cacheFile;
-        width = req.query.width;
-        console.log(width);
-        imageKey = req.params.image || req.params.folder;
-        folderKey = req.params.image ? `/${req.params.folder}` : '';
-        //consult image cache first
-        if (width !== undefined && cache.has(imageKey, width)) {
-            console.log('Pulling from memory');
-            cacheFile = cache.get(imageKey, width);
-            res.contentType(cacheFile.contentType);
-            res.send(Buffer.from(cacheFile.data, 'binary'));
-            return;
-        }
-        else {
-            console.log('Pulling from s3');
-        }
-        s3Request = s3.getObject({
-            Bucket: 'elasticbeanstalk-us-west-1-297608881144' + folderKey,
-            Key: imageKey
+    return __awaiter(this, void 0, void 0, function* () {
+        let app;
+        let memLogger;
+        memLogger = new mem_logger_1.default(image_transform_service_1.memCache);
+        memLogger.run();
+        app = express_1.default();
+        app = routes_1.registerRoutes(app);
+        app.listen(PORT, () => {
+            console.log(`Listening on port ${PORT}`);
         });
-        s3Request.on('httpHeaders', (status, headers) => {
-            contentType = headers['content-type'];
-        });
-        imageStream = s3Request.createReadStream();
-        imageStream.on('error', err => {
-            if (err.message === 'NoSuchKey') {
-                console.error(`${err.message}: ${imageKey}`);
-            }
-            else {
-                // console.error(err);
-            }
-        });
-        if (width && !isNaN(+width)) {
-            transformer = sharp_1.default().resize({
-                width: +width,
-                withoutEnlargement: true,
-                fit: sharp_1.default.fit.inside,
-            });
-            if (jpgRx.test(imageKey)) {
-                transformer.jpeg({
-                    quality: 100
-                });
-            }
-            transformer.on('error', err => {
-                console.error(err);
-            });
-            imageStream = imageStream.pipe(transformer);
-        }
-        // save data for caching
-        imageData = '';
-        cacheStream = imageStream.pipe(new stream_1.default.PassThrough());
-        cacheStream.setEncoding('binary');
-        // imageStream.setEncoding('binary');
-        cacheStream.on('data', (chunk) => {
-            imageData += chunk;
-        });
-        cacheStream.on('end', () => {
-            cache.set(imageData, contentType, imageKey, width);
-        });
-        imageStream.pipe(res);
-        res.setHeader('Access-Control-Allow-Origin', '*');
-    });
-    app.listen(PORT, () => {
-        console.log(`Listening on port ${PORT}`);
     });
 }
 //# sourceMappingURL=main.js.map
