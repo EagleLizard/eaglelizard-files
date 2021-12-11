@@ -19,9 +19,11 @@ export async function imageTransformV2Ctrl(req: Request, res: Response) {
   }
 
   const { imageStream, contentType } = await ImageTransformService.getImageStream(imageKey, folderKey, width);
-
   res.setHeader('content-type', contentType);
   res.setHeader('Access-Control-Allow-Origin', '*');
+  imageStream.on('end', () => {
+    // console.log(`done: ${folderKey}/${imageKey}?width=${widthParam}`);
+    res.status(200).end();
+  });
   imageStream.pipe(res);
-  // s3Request.createReadStream().pipe(res);
 }

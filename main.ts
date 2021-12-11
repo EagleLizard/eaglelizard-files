@@ -1,4 +1,7 @@
 
+import sourceMapSupport from 'source-map-support';
+sourceMapSupport.install();
+
 import express, { Express } from 'express';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -30,5 +33,7 @@ async function main() {
 
   app.listen(PORT, () => {
     console.log(`Listening on port ${PORT}`);
+  }).on('error', err => {
+    console.error(err);
   });
 }

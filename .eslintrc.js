@@ -105,10 +105,11 @@ module.exports = {
       'anonymous': 'never',
       'asyncArrow': 'always'
     }],
-    'no-unused-vars': [ 'error', {
+    '@typescript-eslint/no-unused-vars': [ 'error', {
       args: 'none'
     }],
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-empty-interface': 'off',
   }
 };

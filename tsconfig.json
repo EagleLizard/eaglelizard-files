@@ -1,10 +1,21 @@
 {
   "compilerOptions": {
-    /* Basic Options */
-    "target": "es2015",                          /* Specify ECMAScript target version: 'ES3' (default), 'ES5', 'ES2015', 'ES2016', 'ES2017','ES2018' or 'ESNEXT'. */
-    "module": "commonjs",                     /* Specify module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', or 'ESNext'. */
-    "sourceMap": true,                     /* Generates corresponding '.map' file. */
-    "outDir": "./out",                        /* Redirect output structure to the directory. */
-    "esModuleInterop": true                   /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */
-  }
+    "target": "es2015",
+    "module": "commonjs",
+    "outDir": "./out",
+    "rootDir": "./",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "declaration": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "main.ts",
+    "scripts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }
